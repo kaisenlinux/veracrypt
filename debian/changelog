@@ -1,0 +1,5 @@
+veracrypt (1.24-7kaisen1) kaisen-packages; urgency=medium
+
+  * First packaging for Kaisen Linux
+
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisen-linux.org>  Mon, 19 Oct 2020 23:29:41 +0200
