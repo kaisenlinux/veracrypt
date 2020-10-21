@@ -1,3 +1,11 @@
+veracrypt (1.24-7kaisen2) kaisen-packages; urgency=medium
+
+  * Remove veracrypt-uninstall.sh script
+  * Remove launcher with debian/rules
+  * Postinst delete
+
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisen-linux.org>  Thu, 22 Oct 2020 00:41:03 +0200
+
 veracrypt (1.24-7kaisen1) kaisen-packages; urgency=medium
 
   * First packaging for Kaisen Linux

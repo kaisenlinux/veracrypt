@@ -10,9 +10,8 @@ Vcs-Git: https://gitlab.com/kaisenlinux/packages/veracrypt.git
 
 Package: veracrypt
 Architecture: amd64
-Depends: libwxgtk3.0-gtk3-0v5, libfuse2, dmsetup, sudo
-Suggests: veracrypt-console
-Description: VeraCrypt with GUI interface
+Depends: ${shlibs:Depends}, libwxgtk3.0-gtk3-0v5, libfuse2, dmsetup, sudo
+Description: Encryption HDD, SSD or system drives
  VeraCrypt is software for encrypt all drives
  and system drives. TrueCrypt fork, datas securely is
  guaranteed.
