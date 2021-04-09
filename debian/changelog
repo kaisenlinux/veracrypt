@@ -1,3 +1,10 @@
+veracrypt (1.24-7kaisen3) kaisen-packages; urgency=medium
+
+  * Adding polkit config for pkexec launch
+  * Update control file
+
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>  Fri, 09 Apr 2021 23:43:26 +0200
+
 veracrypt (1.24-7kaisen2) kaisen-packages; urgency=medium
 
   * Remove veracrypt-uninstall.sh script
