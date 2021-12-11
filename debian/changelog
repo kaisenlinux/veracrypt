@@ -1,3 +1,9 @@
+veracrypt (1.25.4-1kaisen) kaisen-packages; urgency=medium
+
+  * Import 1.25.4 version
+
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>  Sat, 11 Dec 2021 12:26:34 +0200
+
 veracrypt (1.24-7kaisen3) kaisen-packages; urgency=medium
 
   * Adding polkit config for pkexec launch

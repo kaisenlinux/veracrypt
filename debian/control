@@ -3,7 +3,7 @@ Section: libs
 Priority: optional
 Maintainer: Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>
 Build-Depends: debhelper, libwxgtk3.0-gtk3-dev, make, libfuse-dev, yasm, gcc
-Standards-Version: 4.5.1
+Standards-Version: 4.6.0
 Homepage: https://www.veracrypt.fr
 Vcs-Browser: https://gitlab.com/kaisenlinux/packages/veracrypt
 Vcs-Git: https://gitlab.com/kaisenlinux/packages/veracrypt.git
