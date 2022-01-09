@@ -8,8 +8,8 @@
     <vendor_url>https://kaisenlinux.org</vendor_url>
 
     <action id="org.kaisen.pkexec.veracrypt">
-        <description>Run veracrypt as root</description>
-        <message>Authentication is required to run veracrypt as root</message>
+        <description>Run VeraCrypt as root</description>
+        <message>Authentication is required to run VeraCrypt as root</message>
 	<icon_name>veracrypt</icon_name>
         <defaults>
             <allow_any>auth_admin</allow_any>
