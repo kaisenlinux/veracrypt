@@ -1,9 +1,15 @@
+veracrypt (1.25.9-1kaisen) kaisen-packages; urgency=medium
+
+  * Import 1.25.9 version
+
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>  Sun, 27 Feb 2022 18:06:08 +0100
+
 veracrypt (1.25.4-2kaisen) kaisen-packages; urgency=medium
 
   * Rename polkit
   * Fix typo in polkit
 
- -- Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>  Sun, 09 Jan 2021 04:16:36 +0100
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>  Sun, 09 Jan 2022 04:16:36 +0100
 
 veracrypt (1.25.4-1kaisen) kaisen-packages; urgency=medium
 

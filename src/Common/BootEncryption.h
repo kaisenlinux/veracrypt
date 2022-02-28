@@ -18,16 +18,6 @@
 #include "Exception.h"
 #include "Platform/PlatformBase.h"
 #include "Volumes.h"
-#include <Winternl.h>
-
-#define SYSPARTITIONINFORMATION 0x62
-
-typedef NTSTATUS (WINAPI *NtQuerySystemInformationFn)(
-		SYSTEM_INFORMATION_CLASS SystemInformationClass,
-		PVOID                    SystemInformation,
-      ULONG                    SystemInformationLength,
-		PULONG                   ReturnLength
-);
 
 typedef ULONG (WINAPI *RtlNtStatusToDosErrorFn)(
   NTSTATUS Status
@@ -370,6 +360,7 @@ namespace VeraCrypt
 #define	TC_SYSTEM_FAVORITES_SERVICE_LOAD_ORDER_GROUP	L"Event Log"
 #define TC_SYSTEM_FAVORITES_SERVICE_CMDLINE_OPTION		L"/systemFavoritesService"
 #define VC_SYSTEM_FAVORITES_SERVICE_ARG_SKIP_MOUNT		L"/SkipMount"
+#define VC_SYSTEM_FAVORITES_SERVICE_ARG_UPDATE_LOADER	L"/UpdateLoader"
 
 #define VC_SYSTEM_FAVORITES_SERVICE_CONFIG_DONT_UPDATE_LOADER			0x1
 #define VC_SYSTEM_FAVORITES_SERVICE_CONFIG_FORCE_SET_BOOTNEXT			0x2
