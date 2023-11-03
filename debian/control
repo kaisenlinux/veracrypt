@@ -2,15 +2,15 @@ Source: veracrypt
 Section: libs
 Priority: optional
 Maintainer: Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>
-Build-Depends: debhelper, libwxgtk3.0-gtk3-dev, make, libfuse-dev, yasm, gcc
-Standards-Version: 4.6.0
+Build-Depends: debhelper, libwxgtk3.2-dev, make, libfuse-dev, libpcsclite-dev, yasm, gcc, pkg-config, build-essential
+Standards-Version: 4.6.2
 Homepage: https://www.veracrypt.fr
 Vcs-Browser: https://gitlab.com/kaisenlinux/packages/veracrypt
 Vcs-Git: https://gitlab.com/kaisenlinux/packages/veracrypt.git
 
 Package: veracrypt
 Architecture: amd64
-Depends: ${shlibs:Depends}, libwxgtk3.0-gtk3-0v5, libfuse2, dmsetup, sudo
+Depends: ${shlibs:Depends}, libwxgtk3.2-1, libfuse2, dmsetup, sudo
 Description: Encryption HDD, SSD or system drives
  VeraCrypt is software for encrypt all drives
  and system drives. TrueCrypt fork, datas securely is
