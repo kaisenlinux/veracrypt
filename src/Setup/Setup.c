@@ -2016,6 +2016,37 @@ error:
 	return bOK;
 }
 
+void RemoveLegacyFiles (wchar_t *szDestDir)
+{
+	const wchar_t* 	oldFileNames[] = {
+		L"docs\\html\\en\\BCH_Logo_48x30.png",
+		L"docs\\html\\en\\LinuxPrepAndBuild.sh",
+		L"docs\\html\\en\\LinuxPrepAndBuild.zip",
+		L"docs\\html\\en\\RIPEMD-160.html",
+		L"docs\\html\\en\\ru\\BCH_Logo_48x30.png",
+		L"Languages\\Language.ru - Copy.xml",
+	};
+	wchar_t szDir[TC_MAX_PATH];
+	wchar_t oldPath[TC_MAX_PATH];
+	BOOL bSlash;
+	size_t x, i;
+
+	StringCbCopyW (szDir, sizeof(szDir), szDestDir);
+	x = wcslen (szDestDir);
+	if (szDestDir[x - 1] == L'\\')
+		bSlash = TRUE;
+	else
+		bSlash = FALSE;
+
+	if (bSlash == FALSE)
+		StringCbCatW (szDir, sizeof(szDir), L"\\");
+
+	for (i = 0; i < ARRAYSIZE(oldFileNames); i++)
+	{
+		StringCbPrintfW (oldPath, sizeof(oldPath), L"%s%s", szDestDir, oldFileNames[i]);
+		StatDeleteFile (oldPath, FALSE);
+	}
+}
 
 void OutcomePrompt (HWND hwndDlg, BOOL bOK)
 {
@@ -2199,7 +2230,6 @@ void DoInstall (void *arg)
 	HWND hwndDlg = (HWND) arg;
 	BOOL bOK = TRUE;
 	wchar_t path[MAX_PATH];
-
 	BootEncryption bootEnc (hwndDlg);
 
 	// Refresh the main GUI (wizard thread)
@@ -2341,6 +2371,12 @@ void DoInstall (void *arg)
 	{
 		WriteMemoryProtectionConfig(bDisableMemoryProtection? FALSE : TRUE);
 		bRestartRequired = TRUE; // Restart is required to apply the new memory protection settings
+	}
+
+	if (bOK && bUpgrade)
+	{
+		// delete legacy files
+		RemoveLegacyFiles (InstallationPath);
 	}
 
 	if (bOK)
@@ -2578,6 +2614,7 @@ static tLanguageEntry g_languagesEntries[] = {
 	{L"ქართული", IDR_LANG_KA, LANG_GEORGIAN, "ka", NULL},
 	{L"한국어", IDR_LANG_KO, LANG_KOREAN, "ko", NULL},
 	{L"Latviešu", IDR_LANG_LV, LANG_LATVIAN, "lv", NULL},
+	{L"Norsk Bokmål", IDR_LANG_NB, LANG_NORWEGIAN, "nb", NULL},
 	{L"Nederlands", IDR_LANG_NL, LANG_DUTCH, "nl", NULL},
 	{L"Norsk Nynorsk", IDR_LANG_NN, LANG_NORWEGIAN, "nn", NULL},
 	{L"Polski", IDR_LANG_PL, LANG_POLISH, "pl", NULL},
@@ -2593,7 +2630,7 @@ static tLanguageEntry g_languagesEntries[] = {
 	{L"Ўзбекча", IDR_LANG_UZ, LANG_UZBEK, "uz", NULL},
 	{L"Tiếng Việt", IDR_LANG_VI, LANG_VIETNAMESE, "vi", NULL},
 	{L"简体中文", IDR_LANG_ZHCN, LANG_CHINESE, "zh-cn", L"zh-CN"},
-	{L"繁體中文", IDR_LANG_ZHHK, LANG_CHINESE, "zh-hk", L"zh-HK"},
+	{L"繁體中文(香港)", IDR_LANG_ZHHK, LANG_CHINESE, "zh-hk", L"zh-HK"},
 	{L"繁體中文", IDR_LANG_ZHTW, LANG_CHINESE, "zh-tw", L"zh-TW"},
 };
 
