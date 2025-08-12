@@ -6,7 +6,7 @@
  Encryption for the Masses 2.02a, which is Copyright (c) 1998-2000 Paul Le Roux
  and which is governed by the 'License Agreement for Encryption for the Masses'
  Modifications and additions to the original source code (contained in this file)
- and all other portions of this file are Copyright (c) 2013-2017 IDRIX
+ and all other portions of this file are Copyright (c) 2013-2025 AM Crypto
  and are governed by the Apache License 2.0 the full text of which is
  contained in the file License.txt included in VeraCrypt binary and source
  code distribution packages. */
@@ -160,7 +160,7 @@ UINT64_STRUCT GetHeaderField64 (uint8 *header, int offset)
 
 typedef struct
 {
-	char DerivedKey[MASTER_KEYDATA_SIZE];
+	unsigned char DerivedKey[MASTER_KEYDATA_SIZE];
 	BOOL Free;
 	LONG KeyReady;
 	int Pkcs5Prf;
@@ -169,15 +169,15 @@ typedef struct
 
 BOOL ReadVolumeHeaderRecoveryMode = FALSE;
 
-int ReadVolumeHeader (BOOL bBoot, char *encryptedHeader, Password *password, int selected_pkcs5_prf, int pim, PCRYPTO_INFO *retInfo, CRYPTO_INFO *retHeaderCryptoInfo)
+int ReadVolumeHeader (BOOL bBoot, unsigned char *encryptedHeader, Password *password, int selected_pkcs5_prf, int pim, PCRYPTO_INFO *retInfo, CRYPTO_INFO *retHeaderCryptoInfo)
 {
-	char header[TC_VOLUME_HEADER_EFFECTIVE_SIZE];
+	unsigned char header[TC_VOLUME_HEADER_EFFECTIVE_SIZE];
 	unsigned char* keyInfoBuffer = NULL;
-	int keyInfoBufferSize = sizeof (KEY_INFO) + 16;
+	int keyInfoBufferSize = sizeof (KEY_INFO) + TC_KEY_INFO_BUFFER_ALIGNMENT;
 	size_t keyInfoBufferOffset;
 	PKEY_INFO keyInfo;
 	PCRYPTO_INFO cryptoInfo;
-	CRYPTOPP_ALIGN_DATA(16) char dk[MASTER_KEYDATA_SIZE];
+	CRYPTOPP_ALIGN_DATA(TC_DERIVED_KEY_BUFFER_ALIGNMENT) unsigned char dk[MASTER_KEYDATA_SIZE];
 	int enqPkcs5Prf, pkcs5_prf;
 	uint16 headerVersion;
 	int status = ERR_PARAMETER_INCORRECT;
@@ -199,7 +199,7 @@ int ReadVolumeHeader (BOOL bBoot, char *encryptedHeader, Password *password, int
 	keyInfoBuffer = TCalloc(keyInfoBufferSize);
 	if (!keyInfoBuffer)
 		return ERR_OUTOFMEMORY;
-	keyInfoBufferOffset = 16 - (((uint64) keyInfoBuffer) % 16);
+	keyInfoBufferOffset = TC_KEY_INFO_BUFFER_ALIGNMENT - (((uint64) keyInfoBuffer) % TC_KEY_INFO_BUFFER_ALIGNMENT);
 	keyInfo = (PKEY_INFO) (keyInfoBuffer + keyInfoBufferOffset);
 
 #if !defined(DEVICE_DRIVER) && !defined(_UEFI)
@@ -457,8 +457,8 @@ KeyReady:	;
 
 				DecryptBuffer (header + HEADER_ENCRYPTED_DATA_OFFSET, HEADER_ENCRYPTED_DATA_SIZE, cryptoInfo);
 
-				// Magic 'VERA'
-				if (GetHeaderField32 (header, TC_HEADER_OFFSET_MAGIC) != 0x56455241)
+				// Magic number
+				if (GetHeaderField32 (header, TC_HEADER_OFFSET_MAGIC) != TC_HEADER_MAGIC_NUMBER)
 					continue;
 
 				// Header version
@@ -559,21 +559,11 @@ KeyReady:	;
 #ifdef TC_WINDOWS_DRIVER
 				{
 					blake2s_state ctx;
-#ifndef _WIN64
-					NTSTATUS saveStatus = STATUS_INVALID_PARAMETER;
-					KFLOATING_SAVE floatingPointState;	
-					if (HasSSE2())
-						saveStatus = KeSaveFloatingPointState (&floatingPointState);
-#endif
 					blake2s_init (&ctx);
 					blake2s_update (&ctx, keyInfo->master_keydata, MASTER_KEYDATA_SIZE);
 					blake2s_update (&ctx, header, sizeof(header));
 					blake2s_final (&ctx, cryptoInfo->master_keydata_hash);
 					burn(&ctx, sizeof (ctx));
-#ifndef _WIN64
-					if (NT_SUCCESS (saveStatus))
-						KeRestoreFloatingPointState (&floatingPointState);
-#endif
 				}
 #else
 				memcpy (cryptoInfo->master_keydata, keyInfo->master_keydata, MASTER_KEYDATA_SIZE);
@@ -704,12 +694,12 @@ void ComputeBootloaderFingerprint (uint8 *bootLoaderBuf, unsigned int bootLoader
 
 #else // TC_WINDOWS_BOOT
 
-int ReadVolumeHeader (BOOL bBoot, char *header, Password *password, int pim, PCRYPTO_INFO *retInfo, CRYPTO_INFO *retHeaderCryptoInfo)
+int ReadVolumeHeader (BOOL bBoot, unsigned char *header, Password *password, int pim, PCRYPTO_INFO *retInfo, CRYPTO_INFO *retHeaderCryptoInfo)
 {
 #ifdef TC_WINDOWS_BOOT_SINGLE_CIPHER_MODE
-	char dk[32 * 2];			// 2 * 256-bit key
+	unsigned char dk[32 * 2];			// 2 * 256-bit key
 #else
-	char dk[32 * 2 * 3];		// 6 * 256-bit key
+	unsigned char dk[32 * 2 * 3];		// 6 * 256-bit key
 #endif
 
 	PCRYPTO_INFO cryptoInfo;
@@ -778,7 +768,7 @@ int ReadVolumeHeader (BOOL bBoot, char *header, Password *password, int pim, PCR
 		DecryptBuffer (header + HEADER_ENCRYPTED_DATA_OFFSET, HEADER_ENCRYPTED_DATA_SIZE, cryptoInfo);
 
 		// Check magic 'VERA' and CRC-32 of header fields and master keydata
-		if (GetHeaderField32 (header, TC_HEADER_OFFSET_MAGIC) != 0x56455241
+		if (GetHeaderField32 (header, TC_HEADER_OFFSET_MAGIC) != TC_HEADER_MAGIC_NUMBER
 			|| (GetHeaderField16 (header, TC_HEADER_OFFSET_VERSION) >= 4 && GetHeaderField32 (header, TC_HEADER_OFFSET_HEADER_CRC) != GetCrc32 (header + TC_HEADER_OFFSET_MAGIC, TC_HEADER_OFFSET_HEADER_CRC - TC_HEADER_OFFSET_MAGIC))
 			|| GetHeaderField32 (header, TC_HEADER_OFFSET_KEY_AREA_CRC) != GetCrc32 (header + HEADER_MASTER_KEYDATA_OFFSET, MASTER_KEYDATA_SIZE))
 		{
@@ -882,19 +872,19 @@ ret:
 
 // Creates a volume header in memory
 #if defined(_UEFI)
-int CreateVolumeHeaderInMemory(BOOL bBoot, char *header, int ea, int mode, Password *password,
+int CreateVolumeHeaderInMemory(BOOL bBoot, unsigned char *header, int ea, int mode, Password *password,
 	int pkcs5_prf, int pim, char *masterKeydata, PCRYPTO_INFO *retInfo,
 	unsigned __int64 volumeSize, unsigned __int64 hiddenVolumeSize,
 	unsigned __int64 encryptedAreaStart, unsigned __int64 encryptedAreaLength, uint16 requiredProgramVersion, uint32 headerFlags, uint32 sectorSize, BOOL bWipeMode)
 #else
-int CreateVolumeHeaderInMemory (HWND hwndDlg, BOOL bBoot, char *header, int ea, int mode, Password *password,
+int CreateVolumeHeaderInMemory (HWND hwndDlg, BOOL bBoot, unsigned char *header, int ea, int mode, Password *password,
 		   int pkcs5_prf, int pim, char *masterKeydata, PCRYPTO_INFO *retInfo,
 		   unsigned __int64 volumeSize, unsigned __int64 hiddenVolumeSize,
 		   unsigned __int64 encryptedAreaStart, unsigned __int64 encryptedAreaLength, uint16 requiredProgramVersion, uint32 headerFlags, uint32 sectorSize, BOOL bWipeMode)
 #endif // !defined(_UEFI)
 {
-	unsigned char *p = (unsigned char *) header;
-	static CRYPTOPP_ALIGN_DATA(16) KEY_INFO keyInfo;
+	unsigned char *p = header;
+	static CRYPTOPP_ALIGN_DATA(TC_KEY_INFO_BUFFER_ALIGNMENT) KEY_INFO keyInfo;
 
 	int nUserKeyLen = password? password->Length : 0;
 	PCRYPTO_INFO cryptoInfo = crypto_open ();
@@ -1050,8 +1040,8 @@ int CreateVolumeHeaderInMemory (HWND hwndDlg, BOOL bBoot, char *header, int ea, 
 	// Salt
 	mputBytes (p, keyInfo.salt, PKCS5_SALT_SIZE);
 
-	// Magic
-	mputLong (p, 0x56455241);
+	// Magic number
+	mputLong (p, TC_HEADER_MAGIC_NUMBER);
 
 	// Header version
 	mputWord (p, VOLUME_HEADER_VERSION);

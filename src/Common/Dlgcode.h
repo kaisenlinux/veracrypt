@@ -6,7 +6,7 @@
  Encryption for the Masses 2.02a, which is Copyright (c) 1998-2000 Paul Le Roux
  and which is governed by the 'License Agreement for Encryption for the Masses'
  Modifications and additions to the original source code (contained in this file)
- and all other portions of this file are Copyright (c) 2013-2017 IDRIX
+ and all other portions of this file are Copyright (c) 2013-2025 AM Crypto
  and are governed by the Apache License 2.0 the full text of which is
  contained in the file License.txt included in VeraCrypt binary and source
  code distribution packages. */
@@ -48,7 +48,7 @@ enum
 	TC_TBXID_EXTRA_BOOT_PARTITION_REMOVAL_INSTRUCTIONS
 };
 
-#define TC_APPLICATION_ID	L"IDRIX.VeraCrypt"
+#define TC_APPLICATION_ID	L"AMCrypto.VeraCrypt"
 
 #define TC_MUTEX_NAME_SYSENC				L"Global\\VeraCrypt System Encryption Wizard"
 #define TC_MUTEX_NAME_NONSYS_INPLACE_ENC	L"Global\\VeraCrypt In-Place Encryption Wizard"
@@ -286,6 +286,9 @@ typedef NTSTATUS (WINAPI *NtQuerySystemInformationFn)(
 #define	ISO_BURNER_TOOL L"isoburn.exe"
 #define PRINT_TOOL L"notepad.exe"
 
+#define WIN_10_1607_BUILD 14393  // Windows 10 version 1607 corresponds to build 14393
+#define WIN_10_1809_BUILD 17763  // Windows 10 version 1809 corresponds to build 17763
+
 void InitGlobalLocks ();
 void FinalizeGlobalLocks ();
 void cleanup ( void );
@@ -352,6 +355,8 @@ uint32 ReadServiceConfigurationFlags ();
 uint32 ReadEncryptionThreadPoolFreeCpuCountLimit ();
 BOOL ReadMemoryProtectionConfig ();
 BOOL WriteMemoryProtectionConfig (BOOL bEnable);
+BOOL ReadScreenProtectionConfig();
+BOOL WriteScreenProtectionConfig(BOOL bEnable);
 BOOL LoadSysEncSettings ();
 int LoadNonSysInPlaceEncSettings (WipeAlgorithmId *wipeAlgorithm);
 void RemoveNonSysInPlaceEncNotifications (void);
@@ -500,6 +505,7 @@ void Debug (char *format, ...);
 void DebugMsgBox (char *format, ...);
 BOOL IsOSAtLeast (OSVersionEnum reqMinOS);
 BOOL IsOSVersionAtLeast (OSVersionEnum reqMinOS, int reqMinServicePack);
+BOOL IsWin10BuildAtLeast(int minBuild);
 BOOL IsSupportedOS ();
 BOOL Is64BitOs ();
 BOOL IsARM();
@@ -540,7 +546,7 @@ BOOL GetSysDevicePaths (HWND hwndDlg);
 BOOL DoDriverInstall (HWND hwndDlg);
 int OpenVolume (OpenVolumeContext *context, const wchar_t *volumePath, Password *password, int pkcs5_prf, int pim, BOOL write, BOOL preserveTimestamps, BOOL useBackupHeader);
 void CloseVolume (OpenVolumeContext *context);
-int ReEncryptVolumeHeader (HWND hwndDlg, char *buffer, BOOL bBoot, CRYPTO_INFO *cryptoInfo, Password *password, int pim, BOOL wipeMode);
+int ReEncryptVolumeHeader (HWND hwndDlg, unsigned char *buffer, BOOL bBoot, CRYPTO_INFO *cryptoInfo, Password *password, int pim, BOOL wipeMode);
 BOOL IsPagingFileActive (BOOL checkNonWindowsPartitionsOnly);
 BOOL IsPagingFileWildcardActive ();
 BOOL DisablePagingFile ();
@@ -594,10 +600,35 @@ BitLockerEncryptionStatus GetBitLockerEncryptionStatus(WCHAR driveLetter);
 BOOL IsTestSigningModeEnabled ();
 DWORD SendServiceNotification (DWORD dwNotificationCmd);
 DWORD FastResizeFile (const wchar_t* filePath, __int64 fileSize);
-#ifdef _WIN64
+#if !defined(SETUP)
 void GetAppRandomSeed (unsigned char* pbRandSeed, size_t cbRandSeed);
 #endif
 BOOL IsInternetConnected();
+BOOL AttachProtectionToCurrentThread(HWND hwnd);
+void DetachProtectionFromCurrentThread();
+
+#if defined(SETUP) && !defined (PORTABLE)
+typedef struct _SECURITY_INFO_BACKUP {
+	PSID pOrigOwner;
+	PSID pOrigGroup;
+	PACL pOrigDacl;
+	PACL pOrigSacl;
+	PSECURITY_DESCRIPTOR pOrigSD;
+} SECURITY_INFO_BACKUP, * PSECURITY_INFO_BACKUP;
+
+typedef struct _PRIVILEGE_STATE {
+	BOOL takeOwnership;
+	BOOL backup;
+	BOOL restore;
+} PRIVILEGE_STATE, * PPRIVILEGE_STATE;
+
+BOOL RestoreSecurityInfo(const wchar_t* filePath, PSECURITY_INFO_BACKUP pBackup);
+void FreeSecurityBackup(PSECURITY_INFO_BACKUP pBackup);
+BOOL SaveCurrentPrivilegeState(PPRIVILEGE_STATE state);
+BOOL RestorePrivilegeState(const PPRIVILEGE_STATE state);
+BOOL EnableRequiredSetupPrivileges(PPRIVILEGE_STATE currentState);
+BOOL ModifyFileSecurityPermissions(const wchar_t* filePath, PSECURITY_INFO_BACKUP pBackup);
+#endif
 #ifdef __cplusplus
 }
 
@@ -788,6 +819,27 @@ public:
 BOOL GetHibernateStatus (BOOL& bHibernateEnabled, BOOL& bHiberbootEnabled);
 bool GetKbList (std::vector<std::wstring>& kbList);
 bool OneOfKBsInstalled (const wchar_t* szKBs[], int count);
+
+class ScreenCaptureBlocker
+{
+public:
+	ScreenCaptureBlocker(HWND hwnd = NULL)
+		: m_hwnd(hwnd), m_attached(false)
+	{
+		m_attached = AttachProtectionToCurrentThread(m_hwnd);
+	}
+
+	~ScreenCaptureBlocker()
+	{
+		if (m_attached)
+			DetachProtectionFromCurrentThread();
+	}
+
+private:
+	HWND m_hwnd;
+	bool m_attached;
+};
+
 
 #endif // __cplusplus
 
